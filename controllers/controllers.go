@@ -8,7 +8,7 @@ import (
 	"github.com/dchf12/jwt/database"
 	"github.com/dchf12/jwt/models"
 	"github.com/gofiber/fiber/v2"
-	jwt "github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -37,11 +37,23 @@ func Register(c *fiber.Ctx) error {
 }
 
 func User(c *fiber.Ctx) error {
-	var data map[string]string
-	if err := c.BodyParser(&data); err != nil {
-		return err
+	cookie := c.Cookies("jwt")
+
+	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
+		return []byte(SecretKey), nil
+	})
+	if err != nil {
+		c.Status(fiber.StatusUnauthorized)
+		return c.JSON(fiber.Map{
+			"message": "unauthenticated",
+		})
 	}
-	return c.JSON(data)
+
+	claims := token.Claims.(*jwt.StandardClaims)
+	var user models.User
+	database.DB.Where("id = ?", claims.Issuer).First(&user)
+
+	return c.JSON(user)
 }
 
 func Login(c *fiber.Ctx) error {

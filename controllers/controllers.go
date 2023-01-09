@@ -2,12 +2,17 @@ package controllers
 
 import (
 	"log"
+	"strconv"
+	"time"
 
 	"github.com/dchf12/jwt/database"
 	"github.com/dchf12/jwt/models"
 	"github.com/gofiber/fiber/v2"
+	jwt "github.com/golang-jwt/jwt/v4"
 	"golang.org/x/crypto/bcrypt"
 )
+
+const SecretKey = "secret"
 
 func Register(c *fiber.Ctx) error {
 	var data map[string]string
@@ -53,6 +58,7 @@ func Login(c *fiber.Ctx) error {
 			"message": "user not found",
 		})
 	}
+
 	if err := bcrypt.CompareHashAndPassword(user.Password, []byte(data["password"])); err != nil {
 		c.Status(fiber.StatusBadRequest)
 		return c.JSON(fiber.Map{
@@ -60,7 +66,32 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	return c.JSON(user)
+	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+		Issuer:    strconv.Itoa(int(user.ID)),
+		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+	})
+
+	token, err := claims.SignedString([]byte(SecretKey))
+
+	if err != nil {
+		c.Status(fiber.StatusInternalServerError)
+		return c.JSON(fiber.Map{
+			"message": "could not login",
+		})
+	}
+
+	cookie := fiber.Cookie{
+		Name:     "jwt",
+		Value:    token,
+		Expires:  time.Now().Add(time.Hour * 24),
+		HTTPOnly: true,
+	}
+
+	c.Cookie(&cookie)
+
+	return c.JSON(fiber.Map{
+		"message": "success",
+	})
 }
 
 func Logout(c *fiber.Ctx) error {

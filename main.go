@@ -1,9 +1,8 @@
 package main
 
 import (
-	"github.com/gofiber/fiber/v2"
-
 	"github.com/dchf12/jwt/routes"
+	"github.com/gofiber/fiber/v2"
 )
 
 func main() {

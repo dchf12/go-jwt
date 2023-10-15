@@ -25,11 +25,10 @@ func Register(c *fiber.Ctx) error {
 		log.Fatal("Password cannot bcrypt hash")
 	}
 
-	user := models.User{
-		Name:     data["name"],
-		Email:    data["email"],
-		Password: password,
-	}
+	user := models.NewUser(
+		data["name"],
+		data["email"],
+		password)
 
 	database.DB.Create(&user)
 

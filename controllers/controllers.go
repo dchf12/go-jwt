@@ -8,7 +8,7 @@ import (
 	"github.com/dchf12/jwt/database"
 	"github.com/dchf12/jwt/models"
 	"github.com/gofiber/fiber/v2"
-	"github.com/golang-jwt/jwt/v4"
+	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 )
 

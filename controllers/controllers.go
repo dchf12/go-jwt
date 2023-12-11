@@ -38,7 +38,7 @@ func Register(c *fiber.Ctx) error {
 func User(c *fiber.Ctx) error {
 	cookie := c.Cookies("jwt")
 
-	token, err := jwt.ParseWithClaims(cookie, &jwt.StandardClaims{}, func(token *jwt.Token) (any, error) {
+	token, err := jwt.ParseWithClaims(cookie, &jwt.RegisteredClaims{}, func(token *jwt.Token) (any, error) {
 		return []byte(SecretKey), nil
 	})
 	if err != nil {
@@ -48,7 +48,7 @@ func User(c *fiber.Ctx) error {
 		})
 	}
 
-	claims := token.Claims.(*jwt.StandardClaims)
+	claims := token.Claims.(*jwt.RegisteredClaims)
 	var user models.User
 	database.DB.Where("id = ?", claims.Issuer).First(&user)
 
@@ -62,6 +62,7 @@ func Login(c *fiber.Ctx) error {
 	}
 	var user models.User
 
+	// refactor: replace with repository
 	database.DB.Where("email = ?", data["email"]).First(&user)
 	if user.ID == 0 {
 		c.Status(fiber.StatusNotFound)
@@ -77,12 +78,12 @@ func Login(c *fiber.Ctx) error {
 		})
 	}
 
-	claims := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.StandardClaims{
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.RegisteredClaims{
 		Issuer:    strconv.Itoa(int(user.ID)),
-		ExpiresAt: time.Now().Add(time.Hour * 24).Unix(),
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)),
 	})
 
-	token, err := claims.SignedString([]byte(SecretKey))
+	t, err := token.SignedString([]byte(SecretKey))
 
 	if err != nil {
 		c.Status(fiber.StatusInternalServerError)
@@ -93,7 +94,7 @@ func Login(c *fiber.Ctx) error {
 
 	cookie := fiber.Cookie{
 		Name:     "jwt",
-		Value:    token,
+		Value:    t,
 		Expires:  time.Now().Add(time.Hour * 24),
 		HTTPOnly: true,
 	}

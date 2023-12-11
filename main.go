@@ -14,5 +14,7 @@ func main() {
 		AllowCredentials: true,
 	}))
 	routes.Setup(app)
-	app.Listen("localhost:8000")
+	if err := app.Listen("localhost:8000"); err != nil {
+		panic(err)
+	}
 }

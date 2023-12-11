@@ -17,5 +17,7 @@ func DBconn() {
 		log.Fatal(err)
 	}
 	DB = db
-	db.AutoMigrate(&models.User{})
+	if err := db.AutoMigrate(&models.User{}); err != nil {
+		log.Fatal(err)
+	}
 }
